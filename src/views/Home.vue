@@ -14,6 +14,12 @@
   </section>
   <section class="section">
     <div class="container">
+      <div class="block has-text-centered" v-if="hasProgress">
+        <button
+          class="button is-primary is-rounded is-large">
+          <router-link :to="{ name: 'Charasort' }" style="color: white">途中から</router-link>
+        </button>
+      </div>
       <div class="box">
         <h2 class="title is-4">ソートするグループを選択</h2>
         <p class="subtitle is-5">選択したもの同士はOR条件です。</p>
@@ -46,13 +52,11 @@
           </div>
           <hr>
         </div>
-        <div class="block has-text-centered" v-if="hasProgress">
-          <button
-            class="button is-primary is-rounded is-large">
-            <router-link :to="{ name: 'Charasort' }" style="color: white">途中から</router-link>
-          </button>
-        </div>
         <div class="block has-text-centered">
+          <ul class="block">
+            <li class="block">ソート対象のキャラ数: {{ selectedCharactors.length }}({{ selectedCharactorNames.join('、') }})</li>
+            <li class="block">最大の必要選択回数: {{ expectedOrderNum }}</li>
+          </ul>
           <button
             class="button is-primary is-rounded is-large"
             @click="startSorting">
@@ -66,6 +70,7 @@
 
 <script lang="ts">
 import {
+  computed,
   defineComponent, onMounted, Ref, ref,
 } from 'vue';
 import { useRouter } from 'vue-router';
@@ -100,24 +105,30 @@ export default defineComponent({
       [...targetGroup].map((attr) => ({ [keyName]: attr })).forEach((attr) => checkedGroups.value.push(attr));
     };
 
-    const startSorting = () => {
-      const selectedCharactors = charactors.filter((chara) => checkedGroups.value.some((checkedGroup) => chara[Object.keys(checkedGroup)[0]] === Object.values(checkedGroup)[0]));
-      const selectedCharactorNames = selectedCharactors.map((chara) => chara['名前']);
+    const hasProgress = ref(false);
+    onMounted(() => {
+      hasProgress.value = localStorage.getItem('count') != null;
+    });
 
-      if (selectedCharactorNames.length < 2) {
+    const selectedCharactors = computed(() => charactors.filter((chara) => checkedGroups.value.some((checkedGroup) => chara[Object.keys(checkedGroup)[0]] === Object.values(checkedGroup)[0])));
+    const selectedCharactorNames = computed(() => selectedCharactors.value.map((chara) => chara['名前']));
+    const expectedOrderNum = computed(() => {
+      if (selectedCharactors.value.length === 0) {
+        return 0;
+      }
+      return Math.ceil(selectedCharactors.value.length * Math.log(selectedCharactors.value.length));
+    });
+
+    const startSorting = () => {
+      if (selectedCharactorNames.value.length < 2) {
         alert('最低2キャラが必要です。');
         return;
       }
 
       localStorage.clear();
-      localStorage.setItem('selectedCharactors', JSON.stringify(selectedCharactorNames));
+      localStorage.setItem('selectedCharactors', JSON.stringify(selectedCharactorNames.value));
       router.push({ name: 'Charasort' });
     };
-
-    const hasProgress = ref(false);
-    onMounted(() => {
-      hasProgress.value = localStorage.getItem('count') != null;
-    });
 
     return {
       checkedGroups,
@@ -126,6 +137,9 @@ export default defineComponent({
       startSorting,
       allGroups,
       hasProgress,
+      selectedCharactors,
+      selectedCharactorNames,
+      expectedOrderNum,
     };
   },
 });

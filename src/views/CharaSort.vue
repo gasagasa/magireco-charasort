@@ -98,7 +98,6 @@ export default defineComponent({
       }
 
       // 左もしくは右がなくなったら、残りを詰め込む
-      this.count += this.lefts.length + this.rights.length;
       this.tempResults = this.tempResults.concat(this.lefts, this.rights);
       this.finalResults.push(this.tempResults.slice());
       this.tempResults.splice(0);
@@ -109,7 +108,6 @@ export default defineComponent({
       }
 
       if (this.nextProcessingStocks.length === 1) {
-        this.count += this.nextProcessingStocks[0].length;
         this.finalResults.push(this.nextProcessingStocks.shift()!.slice());
         this.startNextTurn();
         return;
@@ -134,21 +132,39 @@ export default defineComponent({
       localStorage.setItem('result', JSON.stringify(this.finalResults.shift()));
       this.$router.push({ name: 'CharasortResult' });
     },
-  },
-  computed: {
-    progress(): number {
-      const temp = Math.round((this.count / (charaList.length * Math.log2(charaList.length))) * 100);
-      return Number.isNaN(temp) ? 0 : temp;
-    },
-  },
-  watch: {
-    count() {
+    saveLocalStorage() {
       localStorage.setItem('finalResults', JSON.stringify(this.finalResults));
       localStorage.setItem('tempResults', JSON.stringify(this.tempResults));
       localStorage.setItem('nextProcessingStocks', JSON.stringify(this.nextProcessingStocks));
       localStorage.setItem('lefts', JSON.stringify(this.lefts));
       localStorage.setItem('rights', JSON.stringify(this.rights));
       localStorage.setItem('count', String(this.count));
+    },
+  },
+  computed: {
+    progress(): number {
+      const temp = Math.round((this.count / (charaList.length * Math.log(charaList.length))) * 100);
+      return Number.isNaN(temp) ? 0 : temp;
+    },
+  },
+  watch: {
+    count() {
+      this.saveLocalStorage();
+    },
+    finalResults() {
+      this.saveLocalStorage();
+    },
+    tempResults() {
+      this.saveLocalStorage();
+    },
+    nextProcessingStocks() {
+      this.saveLocalStorage();
+    },
+    lefts() {
+      this.saveLocalStorage();
+    },
+    rights() {
+      this.saveLocalStorage();
     },
   },
   mounted() {
